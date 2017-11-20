@@ -1,2 +1,3 @@
-# dialekt-go
-Dialekt, an simple boolean expression language, for Go.
+# Dialekt for Go
+
+Dialekt, a boolean expression DSL, implemented in Go.
