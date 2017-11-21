@@ -9,6 +9,18 @@ import (
 	"unicode"
 )
 
+// Lex tokenises input from r and writes each token to c.
+func Lex(r io.Reader, c chan<- Token) error {
+	l := &lexer{
+		r:    bufio.NewReader(r),
+		c:    c,
+		line: 1,
+		off:  -1,
+	}
+
+	return l.run()
+}
+
 type lexer struct {
 	r         *bufio.Reader
 	c         chan<- Token
@@ -20,18 +32,6 @@ type lexer struct {
 }
 
 const wildcardRune = '*'
-
-// lex tokenises input from r and writes each token to c.
-func lex(r io.Reader, c chan<- Token) error {
-	l := &lexer{
-		r:    bufio.NewReader(r),
-		c:    c,
-		line: 1,
-		off:  -1,
-	}
-
-	return l.run()
-}
 
 type state func() state
 

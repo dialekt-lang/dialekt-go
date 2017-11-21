@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("lex", func() {
+var _ = Describe("Lex", func() {
 	DescribeTable(
 		"it produces the expected token stream",
 		func(input string, expected []Token) {
@@ -24,7 +24,7 @@ var _ = Describe("lex", func() {
 				}
 			}()
 
-			err := lex(buf, ch)
+			err := Lex(buf, ch)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			<-done
