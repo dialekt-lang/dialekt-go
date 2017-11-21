@@ -26,16 +26,8 @@ const (
 	CloseParenToken
 )
 
-// Token is a structure for tokens produced by the lexer.
-type Token struct {
-	Type                   TokenType
-	Values                 []string
-	StartOffset, EndOffset int
-	Line, Column           int
-}
-
-func (t Token) String() string {
-	switch t.Type {
+func (t TokenType) String() string {
+	switch t {
 	case LogicalAndToken:
 		return "AND operator"
 	case LogicalOrToken:
@@ -53,4 +45,12 @@ func (t Token) String() string {
 	}
 
 	panic("unknown token type")
+}
+
+// Token is a structure for tokens produced by the lexer.
+type Token struct {
+	Type                   TokenType
+	Values                 []string
+	StartOffset, EndOffset int
+	Line, Column           int
 }

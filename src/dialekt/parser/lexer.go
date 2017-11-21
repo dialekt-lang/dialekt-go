@@ -8,17 +8,6 @@ import (
 	"unicode"
 )
 
-func newLexer(r io.RuneReader) *lexer {
-	l := &lexer{
-		r:    r,
-		c:    make(chan *Token, 2),
-		line: 1,
-	}
-	l.state = l.begin
-
-	return l
-}
-
 type state func() state
 
 type lexer struct {
@@ -32,21 +21,22 @@ type lexer struct {
 	line, col  int
 }
 
-func (l *lexer) next() (tok *Token, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if e, ok := r.(error); ok {
-				err = e
-			} else {
-				panic(r)
-			}
-		}
-	}()
+func newLexer(r io.RuneReader) *lexer {
+	l := &lexer{
+		r:    r,
+		c:    make(chan *Token, 2),
+		line: 1,
+	}
+	l.state = l.begin
 
+	return l
+}
+
+func (l *lexer) next() *Token {
 	for {
 		select {
-		case tok = <-l.c:
-			return
+		case tok := <-l.c:
+			return tok
 		default:
 			l.state = l.state()
 		}

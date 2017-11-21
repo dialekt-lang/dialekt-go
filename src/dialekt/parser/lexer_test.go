@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Lex", func() {
+var _ = Describe("lexer", func() {
 	DescribeTable(
 		"it produces the expected token stream",
 		func(input string, expected []Token) {
@@ -18,16 +18,14 @@ var _ = Describe("Lex", func() {
 			var output []Token
 
 			for {
-				tok, err := l.next()
-				Expect(err).ShouldNot(HaveOccurred())
+				tok := l.next()
 				if tok == nil {
-					break
+					Expect(output).To(Equal(expected))
+					return
 				}
 
 				output = append(output, *tok)
 			}
-
-			Expect(output).To(Equal(expected))
 		},
 
 		Entry(
