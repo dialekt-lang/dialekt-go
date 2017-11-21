@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"io"
@@ -9,9 +8,9 @@ import (
 	"unicode"
 )
 
-func newLexer(r io.Reader) *lexer {
+func newLexer(r io.RuneReader) *lexer {
 	l := &lexer{
-		r:    bufio.NewReader(r),
+		r:    r,
 		c:    make(chan *Token, 2),
 		line: 1,
 	}
@@ -23,7 +22,7 @@ func newLexer(r io.Reader) *lexer {
 type state func() state
 
 type lexer struct {
-	r          *bufio.Reader
+	r          io.RuneReader
 	c          chan *Token
 	state      state
 	tok        *Token
