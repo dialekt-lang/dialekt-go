@@ -30,8 +30,8 @@ const (
 type Token struct {
 	Type                   TokenType
 	Values                 []string
-	StartOffset, EndOffset uint
-	Line, Column           uint
+	StartOffset, EndOffset int
+	Line, Column           int
 }
 
 func (t Token) String() string {

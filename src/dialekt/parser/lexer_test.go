@@ -13,21 +13,20 @@ var _ = Describe("Lex", func() {
 		"it produces the expected token stream",
 		func(input string, expected []Token) {
 			buf := bytes.NewBufferString(input)
-			ch := make(chan Token)
-			done := make(chan struct{})
 
+			l := newLexer(buf)
 			var output []Token
-			go func() {
-				defer close(done)
-				for t := range ch {
-					output = append(output, t)
+
+			for {
+				tok, err := l.next()
+				Expect(err).ShouldNot(HaveOccurred())
+				if tok == nil {
+					break
 				}
-			}()
 
-			err := Lex(buf, ch)
-			Expect(err).ShouldNot(HaveOccurred())
+				output = append(output, *tok)
+			}
 
-			<-done
 			Expect(output).To(Equal(expected))
 		},
 

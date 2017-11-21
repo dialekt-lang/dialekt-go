@@ -9,36 +9,32 @@ import (
 	"unicode"
 )
 
-// Lex tokenises input from r and writes each token to c.
-func Lex(r io.Reader, c chan<- Token) error {
+func newLexer(r io.Reader) *lexer {
 	l := &lexer{
 		r:    bufio.NewReader(r),
-		c:    c,
+		c:    make(chan *Token, 2),
 		line: 1,
-		off:  -1,
 	}
+	l.state = l.begin
 
-	return l.run()
+	return l
 }
-
-type lexer struct {
-	r         *bufio.Reader
-	c         chan<- Token
-	buf       bytes.Buffer
-	cur, prev rune
-	off       int
-	line, col uint
-	tok       Token
-}
-
-const wildcardRune = '*'
 
 type state func() state
 
-func (l *lexer) run() (err error) {
-	defer func() {
-		close(l.c)
+type lexer struct {
+	r          *bufio.Reader
+	c          chan *Token
+	state      state
+	tok        *Token
+	buf        bytes.Buffer
+	cur, prev  rune
+	width, off int
+	line, col  int
+}
 
+func (l *lexer) next() (tok *Token, err error) {
+	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(error); ok {
 				err = e
@@ -48,17 +44,20 @@ func (l *lexer) run() (err error) {
 		}
 	}()
 
-	s := l.begin
-	for s != nil {
-		s = s()
+	for {
+		select {
+		case tok = <-l.c:
+			return
+		default:
+			l.state = l.state()
+		}
 	}
-
-	return
 }
 
 func (l *lexer) begin() state {
 	for {
 		if !l.advance() {
+			close(l.c)
 			return nil
 		}
 
@@ -100,7 +99,7 @@ func (l *lexer) quotedString() state {
 
 			return l.begin
 
-		case wildcardRune:
+		case '*':
 			l.captureValue()
 
 		case '\\':
@@ -118,7 +117,7 @@ func (l *lexer) unquotedString() state {
 
 	for {
 		switch l.cur {
-		case wildcardRune:
+		case '*':
 			l.captureValue()
 
 		case '"':
@@ -141,6 +140,7 @@ func (l *lexer) unquotedString() state {
 
 		if !l.advance() {
 			l.endUnquotedString()
+			close(l.c)
 			return nil
 		}
 
@@ -183,9 +183,11 @@ func (l *lexer) advance() bool {
 		panic(errors.New("invalid UTF-8 rune"))
 	}
 
+	l.off += l.width
+	l.width = size
+
 	l.cur = r
 	l.col++
-	l.off += size
 
 	if l.prev == '\n' || (l.prev == '\r' && l.cur != '\n') {
 		l.line++
@@ -202,8 +204,8 @@ func (l *lexer) mustAdvance() {
 }
 
 func (l *lexer) startToken() {
-	l.tok = Token{
-		StartOffset: uint(l.off),
+	l.tok = &Token{
+		StartOffset: l.off,
 		Line:        l.line,
 		Column:      l.col,
 	}
@@ -211,8 +213,7 @@ func (l *lexer) startToken() {
 
 func (l *lexer) endToken(t TokenType, off int) {
 	l.tok.Type = t
-	l.tok.EndOffset = uint(l.off + off)
-
+	l.tok.EndOffset = l.off + off
 	l.c <- l.tok
 }
 
